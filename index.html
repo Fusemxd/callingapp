@@ -2,11 +2,15 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    
     <title>Fake Video Call</title>
-    <!-- โหลด Tailwind CSS เพื่อความสวยงาม -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- โหลด Icon จาก Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body, html {
@@ -17,6 +21,8 @@
             background-color: #000;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* ป้องกันการเด้งหรือเลื่อนหน้าจอเวลาลากนิ้ว */
+            overscroll-behavior-y: none;
         }
 
         /* ภาพพื้นหลัง (อีกฝ่าย) */
@@ -30,7 +36,7 @@
             z-index: 10;
         }
 
-        /* เลเยอร์ไล่สีดำ เพื่อให้ตัวหนังสือด้านบนและล่างอ่านง่ายขึ้น */
+        /* เลเยอร์ไล่สีดำ */
         .overlay {
             position: absolute;
             top: 0;
@@ -42,7 +48,7 @@
             pointer-events: none;
         }
 
-        /* กล้องของเรา (มุมขวาล่าง) */
+        /* กล้องของเรา */
         #local-video {
             width: 100px;
             height: 150px;
@@ -54,12 +60,11 @@
             border-radius: 12px;
             background-color: #333;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            /* พลิกภาพซ้ายขวาให้เหมือนส่องกระจก */
             transform: scaleX(-1);
             border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* ข้อความแจ้งเตือนกรณียังไม่เปิดกล้อง */
+        /* ข้อความแจ้งเตือนกล้อง */
         #camera-status {
             width: 100px;
             height: 150px;
@@ -77,6 +82,7 @@
             padding: 10px;
             pointer-events: none;
             background-color: rgba(50, 50, 50, 0.8);
+            line-height: 1.4;
         }
 
         /* ปุ่มกด */
@@ -98,42 +104,27 @@
             transform: scale(0.9);
         }
 
-        .btn-dark {
-            background-color: rgba(60, 60, 60, 0.7);
-            color: white;
-        }
+        .btn-dark { background-color: rgba(60, 60, 60, 0.7); color: white; }
+        .btn-red { background-color: #ff3b30; color: white; }
+        .btn-green { background-color: #34c759; color: white; }
 
-        .btn-red {
-            background-color: #ff3b30;
-            color: white;
-        }
-
-        .btn-green {
-            background-color: #34c759;
-            color: white;
-        }
-
-        /* เอฟเฟกต์กระเพื่อมปุ่มรับสาย */
         @keyframes pulse-ring {
             0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); }
             70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(52, 199, 89, 0); }
             100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
         }
-        .animate-ring {
-            animation: pulse-ring 2s infinite;
-        }
+        .animate-ring { animation: pulse-ring 2s infinite; }
     </style>
 </head>
 <body>
 
-    <!-- 1. หน้าตั้งค่า (Setup Screen) -->
     <div id="setup-screen" class="absolute inset-0 z-50 bg-gray-900 text-white p-6 flex flex-col justify-center items-center overflow-y-auto">
         <h1 class="text-3xl font-bold mb-8 text-pink-400">สร้างสายวิดีโอคอลจำลอง</h1>
         
         <div class="w-full max-w-sm space-y-5 bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
             <div>
                 <label class="block text-sm font-medium text-gray-300 mb-1">ชื่อคนโทร</label>
-                <input type="text" id="input-name" placeholder="เช่น ที่รัก 💕, บอส" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-pink-500 text-white">
+                <input type="text" id="input-name" placeholder="เช่น ที่รัก 💕" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-pink-500 text-white">
             </div>
             
             <div>
@@ -144,7 +135,6 @@
             <div>
                 <label class="block text-sm font-medium text-gray-300 mb-1">วิดีโอ (ตอนรับสายแล้ว)</label>
                 <input type="file" id="input-video" accept="video/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer">
-                <p class="text-xs text-gray-400 mt-2">* ต้องเลือกวิดีโอเพื่อให้มีภาพเคลื่อนไหวตอนรับสาย (รองรับ MP4)</p>
             </div>
 
             <div>
@@ -153,19 +143,17 @@
             </div>
 
             <button onclick="simulateCall()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl mt-4 transition-all transform active:scale-95 shadow-lg">
-                📞 เริ่มจำลองสายเข้า
+                📞 เริ่มจำลองสายเข้า (เต็มจอ)
             </button>
         </div>
     </div>
 
-    <!-- หน้าจอสแตนด์บาย (จอดำตอนรอเวลา) -->
     <div id="standby-screen" class="hidden absolute inset-0 z-50 bg-black flex flex-col items-center justify-center text-gray-600 cursor-pointer" onclick="cancelStandby()">
         <p>หน้าจอปิดอยู่</p>
         <p class="text-xs mt-2">(แตะเพื่อยกเลิกการรอสาย)</p>
     </div>
 
-    <!-- 2. หน้าจอโทรเข้า (Incoming Call Screen) -->
-    <div id="incoming-screen" class="hidden absolute inset-0 z-40 bg-gray-800 text-white flex flex-col items-center justify-between py-16">
+    <div id="incoming-screen" class="hidden absolute inset-0 z-40 bg-gray-800 text-white flex flex-col items-center justify-between py-20">
         <div class="flex flex-col items-center mt-10">
             <img id="incoming-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80" alt="Avatar" class="w-32 h-32 rounded-full object-cover border-4 border-gray-600 shadow-2xl mb-4">
             <h2 id="incoming-name" class="text-3xl font-medium tracking-wide">ไม่ระบุชื่อ</h2>
@@ -189,37 +177,25 @@
         </div>
     </div>
 
-    <!-- 3. หน้าจอขณะคอล (Call Screen) -->
     <div id="call-screen" class="hidden absolute inset-0 z-30">
-        <!-- วิดีโอจำลองของอีกฝ่าย -->
         <video id="remote-media" autoplay loop playsinline class="w-full h-full object-cover absolute top-0 left-0 z-10"></video>
-        
-        <!-- เงาดำบน-ล่าง -->
         <div class="overlay"></div>
 
-        <!-- ข้อมูลการโทรด้านบน -->
         <div class="absolute top-12 w-full text-center text-white z-30 drop-shadow-md">
             <h2 id="call-name" class="text-2xl font-medium tracking-wide">ไม่ระบุชื่อ</h2>
             <p id="timer" class="text-base mt-1 font-light opacity-90">00:00</p>
         </div>
         
-        <!-- วิดีโอกล้องของเรา -->
         <video id="local-video" autoplay playsinline muted></video>
         <div id="camera-status">กำลังโหลดกล้อง...</div>
 
-        <!-- แผงควบคุมด้านล่าง -->
-        <div class="absolute bottom-8 w-full flex justify-center items-center gap-6 z-30">
-            <!-- ปุ่มปิดไมค์ -->
+        <div class="absolute bottom-10 w-full flex justify-center items-center gap-6 z-30 pb-safe">
             <div class="control-btn btn-dark" onclick="toggleMute(this)">
                 <i data-lucide="mic" id="mic-icon"></i>
             </div>
-            
-            <!-- ปุ่มวางสาย -->
             <div class="control-btn btn-red" onclick="endCall()">
                 <i data-lucide="phone" style="transform: rotate(135deg); width: 28px; height: 28px;"></i>
             </div>
-            
-            <!-- ปุ่มสลับกล้อง / ปิดกล้อง -->
             <div class="control-btn btn-dark" onclick="toggleVideo(this)">
                 <i data-lucide="video" id="video-icon"></i>
             </div>
@@ -227,101 +203,101 @@
     </div>
 
     <script>
-        // เริ่มต้นใช้งาน Lucide Icons
         lucide.createIcons();
 
-        // ตัวแปรเก็บข้อมูล
         let customName = "ผู้ติดต่อ";
-        let avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"; // รูป Default
+        let avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"; 
         let videoUrl = "";
 
-        // UI Elements
         const setupScreen = document.getElementById('setup-screen');
         const incomingScreen = document.getElementById('incoming-screen');
         const callScreen = document.getElementById('call-screen');
         const standbyScreen = document.getElementById('standby-screen');
         
-        let callTimeout; // ตัวแปรเก็บเวลาหน่วง
-        
-        // ฟังก์ชันจำลองคนโทรเข้า
+        let callTimeout;
+
+        // ฟังก์ชันสั่งให้เว็บทำงานเต็มหน้าจอ (ซ่อนแถบ URL)
+        function requestFullScreen() {
+            const docElm = document.documentElement;
+            if (docElm.requestFullscreen) {
+                docElm.requestFullscreen().catch(err => console.log(err));
+            } else if (docElm.webkitRequestFullscreen) { /* Safari */
+                docElm.webkitRequestFullscreen().catch(err => console.log(err));
+            }
+        }
+
+        function exitFullScreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(err => console.log(err));
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen().catch(err => console.log(err));
+            }
+        }
+
         function simulateCall() {
-            // ดึงค่าชื่อ
+            // ขอเข้า Fullscreen ทันทีที่กดปุ่ม
+            requestFullScreen();
+
             const nameInput = document.getElementById('input-name').value;
             if (nameInput.trim() !== "") customName = nameInput;
             
-            // ดึงไฟล์รูปโปรไฟล์ (ถ้ามี)
             const avatarFile = document.getElementById('input-avatar').files[0];
-            if (avatarFile) {
-                avatarUrl = URL.createObjectURL(avatarFile);
-            }
+            if (avatarFile) avatarUrl = URL.createObjectURL(avatarFile);
             
-            // ดึงไฟล์วิดีโอ (บังคับให้ต้องเลือก)
             const videoFile = document.getElementById('input-video').files[0];
             if (videoFile) {
                 videoUrl = URL.createObjectURL(videoFile);
             } else {
-                alert("กรุณาเลือกไฟล์วิดีโอ (สำหรับเล่นตอนรับสาย) ก่อนกดจำลองสายเข้าครับ");
+                alert("กรุณาเลือกไฟล์วิดีโอ (สำหรับเล่นตอนรับสาย) ก่อนครับ");
                 return;
             }
 
-            // นำข้อมูลไปใส่ในหน้าจอ
             document.getElementById('incoming-name').innerText = customName;
             document.getElementById('incoming-avatar').src = avatarUrl;
-            
             document.getElementById('call-name').innerText = customName;
             document.getElementById('remote-media').src = videoUrl;
 
-            // ดึงค่าเวลาหน่วง
             const delayTime = parseInt(document.getElementById('input-delay').value) || 0;
 
-            // สลับหน้าจอเป็นโหมด "สายเข้า" หรือ "สแตนด์บาย"
             setupScreen.classList.add('hidden');
             
             if (delayTime > 0) {
-                // ถ้ามีหน่วงเวลา ให้โชว์จอดำสแตนด์บายก่อน
                 standbyScreen.classList.remove('hidden');
                 callTimeout = setTimeout(() => {
                     standbyScreen.classList.add('hidden');
                     incomingScreen.classList.remove('hidden');
                 }, delayTime * 1000);
             } else {
-                // ถ้าไม่หน่วง โชว์สายเข้าเลย
                 incomingScreen.classList.remove('hidden');
             }
         }
 
-        // ยกเลิกตอนกำลังหน่วงเวลา (จอดำ)
         function cancelStandby() {
             clearTimeout(callTimeout);
             standbyScreen.classList.add('hidden');
             setupScreen.classList.remove('hidden');
+            exitFullScreen();
         }
 
-        // ปฏิเสธสาย (ปิดแอพ)
         function cancelCall() {
             incomingScreen.classList.add('hidden');
             if(videoUrl) URL.revokeObjectURL(videoUrl);
             
-            // ทำให้หน้าจอดำสนิท และพยายามปิดหน้าต่าง
             document.body.style.backgroundColor = "black";
             document.body.innerHTML = "";
+            exitFullScreen();
             window.close();
         }
 
-        // รับสาย
         function acceptCall() {
             incomingScreen.classList.add('hidden');
             callScreen.classList.remove('hidden');
             
-            // เริ่มเล่นวิดีโอของอีกฝ่าย
             document.getElementById('remote-media').play();
-            
-            // เริ่มเปิดกล้องหน้าของเรา และเริ่มจับเวลา
             startCamera();
             timerInterval = setInterval(updateTimer, 1000);
         }
 
-        // ระบบจับเวลา
         let seconds = 0;
         let timerInterval;
 
@@ -332,12 +308,16 @@
             document.getElementById('timer').innerText = `${mins}:${secs}`;
         }
 
-        // ระบบกล้อง
         const localVideo = document.getElementById('local-video');
         const cameraStatus = document.getElementById('camera-status');
         let currentStream = null;
 
         async function startCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                cameraStatus.innerText = "ไม่สามารถเปิดกล้องได้\nต้องเปิดลิงก์แบบ HTTPS";
+                return;
+            }
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "user" }, 
@@ -351,13 +331,10 @@
                     cameraStatus.style.display = 'none';
                 };
             } catch (err) {
-                console.error("Camera Error:", err);
-                cameraStatus.innerText = "ไม่สามารถเข้าถึงกล้องได้\n(อาจถูกบล็อก)";
-                cameraStatus.style.backgroundColor = "rgba(255, 59, 48, 0.8)";
+                cameraStatus.innerText = "ไม่สามารถเข้าถึงกล้องได้";
             }
         }
 
-        // เอฟเฟกต์ปุ่มจำลอง
         let isMuted = false;
         function toggleMute(btn) {
             isMuted = !isMuted;
@@ -386,7 +363,6 @@
                 localVideo.style.opacity = '0';
                 cameraStatus.style.display = 'flex';
                 cameraStatus.innerText = "กล้องปิดอยู่";
-                cameraStatus.style.backgroundColor = "rgba(50, 50, 50, 0.8)";
             } else {
                 btn.style.backgroundColor = "rgba(60, 60, 60, 0.7)";
                 btn.style.color = "white";
@@ -397,34 +373,25 @@
             lucide.createIcons();
         }
 
-        // กดวางสาย
         function endCall() {
             clearInterval(timerInterval);
             document.getElementById('timer').innerText = "สิ้นสุดการสนทนา";
             
-            // ปิดกล้องหน้า
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
                 localVideo.srcObject = null;
             }
 
-            // หยุดวิดีโอคนโทร
-            const remoteMedia = document.getElementById('remote-media');
-            remoteMedia.pause();
-            remoteMedia.currentTime = 0;
+            document.getElementById('remote-media').pause();
 
-            // หน่วงเวลาหน้าจอ "สิ้นสุดการสนทนา" ไว้ 1.5 วินาที แล้วจำลองการปิดแอพ
             setTimeout(() => {
                 callScreen.classList.add('hidden');
-                
-                // คืนหน่วยความจำ
                 if(videoUrl) URL.revokeObjectURL(videoUrl);
-
-                // ทำให้หน้าจอดำสนิท และพยายามปิดหน้าต่าง
+                
                 document.body.style.backgroundColor = "black";
                 document.body.innerHTML = "";
+                exitFullScreen();
                 window.close();
-                
             }, 1500);
         }
     </script>
